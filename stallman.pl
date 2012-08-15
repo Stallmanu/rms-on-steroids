@@ -44,7 +44,7 @@ my @ns_headers = (
 );
 
 our $pic_path = "$ENV{HOME}/rms/";					# Image directory
-our $logging_enabled = 1;
+our $logging_enabled = 0;
 our $linus_mode = 0;								# Freedom hating Linus mode
 our $scan_interval = 10;                            # Interval between each sweep of all boards
 our $min_post_interval = 30;        				# Minimum delay after each individual interjection
@@ -481,7 +481,7 @@ sub scan_posts {
         if (/vendor/i && ! /recommend the general term/) {$match = 1;$pasta = $vendor_pasta}
         if (/The most important contributions that the FSF made/ ) {$match = 1;$pasta = $linus_pasta}
         if (/L\s*(i\W*n\W*u\W*|l\W*u\W*n\W*i\W*|o\W*o\W*n\W*i\W*)x(?!\s+kernel)/ix && ! /(GNU|Gah?n(oo|ew))\s*(.|plus|with|and|slash)\s*(L(oo|i|u)n(oo|i|u)(x|cks))/i) {$match = 1;$pasta = $gnulinux_pasta}
-        if (/fuck (linux|stallman|gnu|gpl)|stallman ?bots?|stall ?bots?|rmsbots?|stallman pls go|Shut your filthy hippy mouth, Richard/i) {$match = 1;$pasta = $seal_pasta;}
+        if (/fuck (linux|stallman|gnu|gpl)|(stallm?a?n?|rms) ?bots?|(stallm?a?n?|rms)bots? pls|Shut your filthy hippy mouth, Richard/i) {$match = 1;$pasta = $seal_pasta;}
     	} else {
     	if (/What you're referring to as Linux, is in fact, GNU\/Linux/i) {$match = 1;$pasta = $torvalds_pasta}
     	}
@@ -536,7 +536,6 @@ sub interject {
     my ($form, $interjection, $submit_button, $pic);
     $interjection = ">>$post_no\n" . $pasta;
     $pic = &select_pic;
-    #&log_msg("Attatched: $pic");
 
     my $mechanize = WWW::Mechanize->new();
     $mechanize->get($url);
@@ -557,7 +556,7 @@ sub interject {
     sleep($min_post_interval + rand($post_interval_variation)); 
 }
 
-sub log_msg {
+sub log_msg(i) {
     my $msg = shift;
     print("$msg\n");
     my $now = DateTime->now;
