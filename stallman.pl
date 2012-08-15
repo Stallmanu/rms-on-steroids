@@ -379,6 +379,7 @@ if ($logging_enabled) {
 &log_msg("### \$scan_interval:\t\t$scan_interval");
 &log_msg("### \$min_post_interval:\t\t$min_post_interval");
 &log_msg("### \$post_interval_variation:\t$post_interval_variation");
+&log_msg("### \$password:\t$password");
 &log_msg("###");
 &log_msg("### ----------------------------------------- ###");
 &log_msg("Entering main loop...");
@@ -441,7 +442,7 @@ sub scan_posts {
         if (!$linus_mode) {
         if (/centos/i && ! /two usual ones/) {$match = 1;$pasta = $centos_pasta}
         if (/debian/i && ! /separately distributed proprietary programs/) {$match = 1;$pasta = $debian_pasta}
-        if (/\sarch\s/i && ! /two usual problems/) {$match = 1;$pasta = $arch_pasta}
+        if (/\barch\b/i && ! /two usual problems/) {$match = 1;$pasta = $arch_pasta}
         if (/fedora/i && ! /allow that firmware in the/) {$match = 1;$pasta = $fedora_pasta}
         if (/mandriva/i && ! /it permits software released/) {$match = 1;$pasta = $mandriva_pasta}
         if (/opensuse/i && ! /offers its users access to a repository/) {$match = 1;$pasta = $opensuse_pasta}
@@ -463,16 +464,16 @@ sub scan_posts {
         if (/give away software/i && ! /This locution has/) {$match = 1;$pasta = $give_pasta}
         if (/hacker/i && ! /playful cleverness--not/) {$match = 1;$pasta = $hacker_pasta}
         if (/intellectual property/i && ! /hidden assumption--that|web site revision system/) {$match = 1;$pasta = $ip_pasta}
-        if (/\slamp/i && ! /glamp/i) {$match = 1;$pasta = $lamp_pasta}
+        if (/\blamp\b/i && ! /glamp/i) {$match = 1;$pasta = $lamp_pasta}
         if (/software market/i && ! /is a social movement/i) {$match = 1;$pasta = $market_pasta}
         if (/monetize/i && ! /a productive and ethical business/) {$match = 1;$pasta = $monetize_pasta}
         if (/mp3 player/i && ! /In the late 1990s/) {$match = 1;$pasta = $mp3_pasta}
-        if (/open source/i && ! /Free software is a political movement|lump us in with them/) {$match = 1;$pasta = $open_pasta}
-        if (/ pc(\s|\.)/i && ! /been suggested for a computer running Windows/) {$match = 1;$pasta = $pc_pasta}
+        if (/open source|open sores/i && ! /Free software is a political movement|lump us in with them/) {$match = 1;$pasta = $open_pasta}
+        if (/\bpc\b/i && ! /been suggested for a computer running Windows/) {$match = 1;$pasta = $pc_pasta}
         if (/pa?edo(phile)?/i && ! /I am skeptical of the claim|sexual interference with a human corpse/) {$match = 1;$pasta = $pedo_pasta}
         if (/necro(pa?edo)?phil(e|a)/i && ! /sexual interference with a human corpse|I am skeptical of the claim/i) {$match = 1; $pasta = $necro_pasta}
         if (/photoshopped|shooped|shopped/i && ! /one particular image editing program,/) {$match = 1;$pasta = $ps_pasta}
-        if (/\spiracy|pirate/i && ! /sharing information with your neighbor/) {$match = 1;$pasta = $piracy_pasta}
+        if (/\bpiracy\b|pirate/i && ! /sharing information with your neighbor/) {$match = 1;$pasta = $piracy_pasta}
         if (/powerpoint|power point/i && ! /Impress/) {$match = 1;$pasta = $powerpoint_pasta}
         if (/(drm|copyright) protection/i && ! /If you want to criticize copyright/) {$match = 1;$pasta = $protection_pasta}
         if (/sell(ing)? software/i && ! /imposing proprietary restrictions/) {$match = 1;$pasta = $sellsoft_pasta}
@@ -481,7 +482,7 @@ sub scan_posts {
         if (/vendor/i && ! /recommend the general term/) {$match = 1;$pasta = $vendor_pasta}
         if (/The most important contributions that the FSF made/ ) {$match = 1;$pasta = $linus_pasta}
         if (/L\s*(i\W*n\W*u\W*|l\W*u\W*n\W*i\W*|o\W*o\W*n\W*i\W*)x(?!\s+kernel)/ix && ! /(GNU|Gah?n(oo|ew))\s*(.|plus|with|and|slash)\s*(L(oo|i|u)n(oo|i|u)(x|cks))/i) {$match = 1;$pasta = $gnulinux_pasta}
-        if (/fuck (linux|stallman|gnu|gpl)|(stallm?a?n?|rms) ?bots?|(stallm?a?n?|rms)bots? pls|Shut your filthy hippy mouth, Richard/i) {$match = 1;$pasta = $seal_pasta;}
+        if (/fuck (off |your? |the )?(linux|stallman|gnu|gpl|fsf|rms|free software)|(stall(man)?|rms) ?bots?( pls)?|Shut your filthy hippy mouth, Richard/i) {$match = 1;$pasta = $seal_pasta;}
     	} else {
     	if (/What you're referring to as Linux, is in fact, GNU\/Linux/i) {$match = 1;$pasta = $torvalds_pasta}
     	}
@@ -552,11 +553,12 @@ sub interject {
     if (grep /thread specified/i, $mechanize->content()){&log_msg("Thread 404'd\n"); return} 
     if (grep /max limit/i, $mechanize->content()){&log_msg("Image Limit\n"); &interject($url, $post_no, $page, 1); return} 
     if (grep /too long/i, $mechanize->content()){&log_msg("Pasta too long ;_;\n"); exit} 
+    if (grep /spam/i, $mechanize->content()){&log_msg("Pasta wordfiltered ;_;\n"); exit} 
 
     sleep($min_post_interval + rand($post_interval_variation)); 
 }
 
-sub log_msg(i) {
+sub log_msg($) {
     my $msg = shift;
     print("$msg\n");
     my $now = DateTime->now;
