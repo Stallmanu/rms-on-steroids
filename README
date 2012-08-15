@@ -26,3 +26,4 @@ imagemagick
 Todo:
 Circumvent filters(unicode?)
 make @interjected centralized
+Proxify the DNS requests to reverse the polarity of bans

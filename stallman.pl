@@ -468,7 +468,7 @@ sub scan_posts {
         if (/software market/i && ! /is a social movement/i) {$match = 1;$pasta = $market_pasta}
         if (/monetize/i && ! /a productive and ethical business/) {$match = 1;$pasta = $monetize_pasta}
         if (/mp3 player/i && ! /In the late 1990s/) {$match = 1;$pasta = $mp3_pasta}
-        if (/open source|open sores/i && ! /Free software is a political movement|lump us in with them/) {$match = 1;$pasta = $open_pasta}
+        if (/open (source|sores)/i && ! /Free software is a political movement|lump us in with them/) {$match = 1;$pasta = $open_pasta}
         if (/\bpc\b/i && ! /been suggested for a computer running Windows/) {$match = 1;$pasta = $pc_pasta}
         if (/pa?edo(phile)?/i && ! /I am skeptical of the claim|sexual interference with a human corpse/) {$match = 1;$pasta = $pedo_pasta}
         if (/necro(pa?edo)?phil(e|a)/i && ! /sexual interference with a human corpse|I am skeptical of the claim/i) {$match = 1; $pasta = $necro_pasta}
