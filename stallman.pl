@@ -27,7 +27,6 @@
 use warnings;
 use strict;
 
-#use WWW::Mechanize;
 use LWP::UserAgent::ProxyHopper;
 use HTML::Form;
 use Data::Dumper;
@@ -489,7 +488,7 @@ sub scan_posts {
         # if (/trusted computing/i && ! /scheme to redesign computers/) {$match = 1;$pasta = $trustedcomp_pasta}
         # if (/vendor/i && ! /recommend the general term/) {$match = 1;$pasta = $vendor_pasta}
         # if (/The most important contributions that the FSF made/ ) {$match = 1;$pasta = $linus_pasta}
-        # if (/L\s*(i\W*n\W*u\W*|l\W*u\W*n\W*i\W*|o\W*o\W*n\W*i\W*)x(?!\s+kernel)/ix && ! /(GNU|Gah?n(oo|ew))\s*(.|plus|with|and|slash)\s*(L(oo|i|u)n(oo|i|u)(x|cks))/i) {$match = 1;$pasta = $gnulinux_pasta;}
+        if (/L\s*(i\W*n\W*u\W*|l\W*u\W*n\W*i\W*|o\W*o\W*n\W*i\W*)x(?!\s+kernel)/ix && ! /(GNU|Gah?n(oo|ew))\s*(.|plus|with|and|slash)\s*(L(oo|i|u)n(oo|i|u)(x|cks))/i) {$match = 1;$pasta = $gnulinux_pasta;}
         if (/fuck (off |your? |the )?(linux|stallman|gnu|gpl|fsf|rms|free software)|(stall(man)?|rms) ?bots?( pls)?|Shut your filthy hippy mouth, Richard/i) {$match = 1;$pasta = $seal_pasta;}
     	} else {
     	if (/What you're referring to as Linux, is in fact, GNU\/Linux/i) {$match = 1;$pasta = $torvalds_pasta}
@@ -575,7 +574,6 @@ sub interject {
     # if (grep /spam/i, $mechanize->content()){&log_msg("Pasta wordfiltered ;_;\n"); exit} 
 
     sleep($min_post_interval + rand($post_interval_variation));
-    &log_msg()
 }
 
 sub log_msg($) {
