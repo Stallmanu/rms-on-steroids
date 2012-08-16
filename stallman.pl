@@ -27,36 +27,48 @@
 use warnings;
 use strict;
 
-use LWP::UserAgent;
+#use WWW::Mechanize;
+use LWP::UserAgent::ProxyHopper;
 use HTML::Form;
 use Data::Dumper;
 use DateTime;
-use WWW::Mechanize;
-my @threads;
-my $output;
-my $iteration = 0;
+
 my %boards = ( g => 'boards' );                     # Hash containing boards to sweep
 my @ns_headers = (
     'User-Agent' => 'Mozilla/5.0 (X11; Gentoo; Linux i686; rv:14.0) Gecko/20100101 Firefox/14.0.1',
     'Accept-Charset' => 'iso-8859-1,*,utf-8',
     'Accept-Language' => 'en-US',
-    'Referer' => 'https://boards.4chan.org/g/',
+    'Referer' => 'https://boards.4chan.org/$board/',
 );
 
-our $pic_path = "$ENV{HOME}/rms/";					# Image directory
-our $logging_enabled = 0;
-our $linus_mode = 0;								# Freedom hating Linus mode
-our $scan_interval = 10;                            # Interval between each sweep of all boards
-our $min_post_interval = 30;        				# Minimum delay after each individual interjection
-our $post_interval_variation = 5;                   # Upper threshold of random additional delay after interjecting
-our $password = int(rand(99999999));                # Generate random password for stallman
-our $rainbow_rms = 0;                               # Give images random hue
-our @handsome_pics = <$pic_path*>;
+my $pic_path = "$ENV{HOME}/rms/";					# Image directory
 my $log_file = "$ENV{HOME}/log_interjection";
 
-our $total_posts = 0;
-our @interjected;                                   # Track posts already responded to.
-our $browser = LWP::UserAgent->new;
+my $rainbow_rms = 0; 								# Give images random hue
+my $logging_enabled = 1;
+my $linus_mode = 0;									# Freedom hating Linus mode
+my $scan_interval = 10;								# Interval between each sweep of all boards
+my $min_post_interval = 30;							# Minimum delay after each individual interjection
+my $post_interval_variation = 5;					# Upper threshold of random additional delay after interjecting
+my $email = "";
+
+my $password = int(rand(99999999));					# Generate random password for stallman
+my @handsome_pics = <$pic_path*>;
+
+my @threads;
+my @interjected;									# Track posts already responded to.
+my $output;
+my $iteration = 0;
+my $ua = LWP::UserAgent::ProxyHopper->new(agent => @ns_headers);
+$ua->proxify_load(
+	freeproxylists	=> 1,
+	plan_b			=> 1,
+	proxy4free		=> 1,
+	timeout			=> 10,
+	retries			=> 2,
+	#extra_proxies	=> []
+	#schemes			=> ['http','ftp']
+	);
 
 # Delicious pasta
 our $pasta =<<FIN;
@@ -369,7 +381,7 @@ No BSD distribution has policies against proprietary binary-only firmware that m
 FIN
 
 if ($logging_enabled) {
-	open LOGGING, ">", $log_file or die $!; # Log file location
+	open LOGGING, ">", $log_file or die $!;			# Log file location
 	&log_msg("...Logging to $log_file");
 }
 
@@ -379,10 +391,10 @@ if ($logging_enabled) {
 &log_msg("### \$scan_interval:\t\t$scan_interval");
 &log_msg("### \$min_post_interval:\t\t$min_post_interval");
 &log_msg("### \$post_interval_variation:\t$post_interval_variation");
-&log_msg("### \$password:\t$password");
+&log_msg("### \$password:\t\t\t$password");
 &log_msg("###");
 &log_msg("### ----------------------------------------- ###");
-&log_msg("Entering main loop...");
+&log_msg("Entering main loop...\n");
 
 while (1) {
     &log_msg("Iteration: $iteration");
@@ -391,7 +403,7 @@ while (1) {
 		# pass each thread to &scan_posts to read.
         my ($srvr, $board) = ($boards{$_}, $_);
         my $board_url = "http://boards.4chan.org/$board/0";
-        my $page = ($browser->get($board_url, @ns_headers))->content;
+        my $page = ($ua->get($board_url))->content;
         $@ and print STDERR "$!";
         push @threads, $page =~ /<div class="thread" id="t(\d+)"/g;
         &scan_posts("http://boards.4chan.org/$board/res/$_") for @threads;
@@ -404,25 +416,21 @@ sub random_string(;$)
 {
 	my $length = shift || 8;
 	my @char = ('a' .. 'z', 'A' .. 'Z', 0 .. 9);
-
 	my $string;
 	$string .= $char[rand @char] while ($length--);
-
 	return $string;
 }
 sub invoke_curl($)
 {
 	my ($options) = shift;
-
 	my $command = "curl $options --progress-bar -s -S -f ";
 	$output = `$command`;
-
 	return $?;
 }
 sub scan_posts {
     my $thread_url = shift;
     my %posts;
-    my $page = ($browser->get($thread_url, @ns_headers))->content;
+    my $page = ($ua->get($thread_url))->content;
 	# 'name' attribute holds post number, post body is inside blockquote tags.
     %posts = $page =~
         /<blockquote class="postMessage" id="m(\d+)">(.*?)<\/blockquote>/gs;
@@ -440,60 +448,58 @@ sub scan_posts {
         s/&#44;/,/g;
 
         if (!$linus_mode) {
-        if (/centos/i && ! /two usual ones/) {$match = 1;$pasta = $centos_pasta}
-        if (/debian/i && ! /separately distributed proprietary programs/) {$match = 1;$pasta = $debian_pasta}
-        if (/\barch\b/i && ! /two usual problems/) {$match = 1;$pasta = $arch_pasta}
-        if (/fedora/i && ! /allow that firmware in the/) {$match = 1;$pasta = $fedora_pasta}
-        if (/mandriva/i && ! /it permits software released/) {$match = 1;$pasta = $mandriva_pasta}
-        if (/opensuse/i && ! /offers its users access to a repository/) {$match = 1;$pasta = $opensuse_pasta}
-        if (/red hat|rhel/i && ! /enterprise distribution primarily/) {$match = 1;$pasta = $redhat_pasta}
-        if (/slackware/i && ! /two usual problems/) {$match = 1;$pasta = $slackware_pasta}
-        if (/ubuntu/i && ! /provides specific repositories of nonfree/) {$match = 1;$pasta = $ubuntu_pasta}
-        if (/(free|open|net).?bsd/i && ! /all include instructions for obtaining nonfree/) {$match = 1;$pasta = $bsd_pasta}
-        if (/bsd.style/i && ! /advertising clause/) {$match = 1;$pasta = $bsdstyle_pasta}
-        if (/cloud computing|the cloud/i && ! /marketing buzzword/) {$match = 1;$pasta = $cloudcomp_pasta}
-        if (/closed source/i && ! /lump us in with them/) {$match = 1;$pasta = $closed_pasta}
-        if (/commercial/i && ! /nonprofit organizations|Canonical expressly promotes|encourages people to imagine/) {$match = 1;$pasta = $commercial_pasta}
-        if (/consumer/i && ! /Digital Television Promotion/) {$match = 1;$pasta = $consumer_pasta}
-        if (/content/i && ! /(am|are) content|web site revision system|economic theory|contents/) {$match = 1;$pasta = $content_pasta}
-        if (/digital goods/i && ! /erroneously identifies/) {$match = 1;$pasta = $digital_goods_pasta}
-        if (/digital locks?/i && ! /digital handcuffs/) {$match = 1;$pasta = $digital_locks_pasta}
-        if (/drm|digital rights management/i && ! /lead you unawares|If you want to criticize copyright/) {$match = 1;$pasta = $drm_pasta}
-        if (/ecosystem/i && ! /implicitly suggests an attitude/) {$match = 1;$pasta = $eco_pasta}
-        if (/freeware|free.ware/i && ! /often in the 1980s/) {$match = 1;$pasta = $freeware_pasta}
-        if (/give away software/i && ! /This locution has/) {$match = 1;$pasta = $give_pasta}
-        if (/hacker/i && ! /playful cleverness--not/) {$match = 1;$pasta = $hacker_pasta}
-        if (/intellectual property/i && ! /hidden assumption--that|web site revision system/) {$match = 1;$pasta = $ip_pasta}
-        if (/\blamp\b/i && ! /glamp/i) {$match = 1;$pasta = $lamp_pasta}
-        if (/software market/i && ! /is a social movement/i) {$match = 1;$pasta = $market_pasta}
-        if (/monetize/i && ! /a productive and ethical business/) {$match = 1;$pasta = $monetize_pasta}
-        if (/mp3 player/i && ! /In the late 1990s/) {$match = 1;$pasta = $mp3_pasta}
-        if (/open (source|sores)/i && ! /Free software is a political movement|lump us in with them/) {$match = 1;$pasta = $open_pasta}
-        if (/\bpc\b/i && ! /been suggested for a computer running Windows/) {$match = 1;$pasta = $pc_pasta}
-        if (/pa?edo(phile)?/i && ! /I am skeptical of the claim|sexual interference with a human corpse/) {$match = 1;$pasta = $pedo_pasta}
-        if (/necro(pa?edo)?phil(e|a)/i && ! /sexual interference with a human corpse|I am skeptical of the claim/i) {$match = 1; $pasta = $necro_pasta}
-        if (/photoshopped|shooped|shopped/i && ! /one particular image editing program,/) {$match = 1;$pasta = $ps_pasta}
-        if (/\bpiracy\b|pirate/i && ! /sharing information with your neighbor/) {$match = 1;$pasta = $piracy_pasta}
-        if (/powerpoint|power point/i && ! /Impress/) {$match = 1;$pasta = $powerpoint_pasta}
-        if (/(drm|copyright) protection/i && ! /If you want to criticize copyright/) {$match = 1;$pasta = $protection_pasta}
-        if (/sell(ing)? software/i && ! /imposing proprietary restrictions/) {$match = 1;$pasta = $sellsoft_pasta}
-        if (/software industry/i && ! /automated production of material goods/) {$match = 1;$pasta = $softwareindustry_pasta}
-        if (/trusted computing/i && ! /scheme to redesign computers/) {$match = 1;$pasta = $trustedcomp_pasta}
-        if (/vendor/i && ! /recommend the general term/) {$match = 1;$pasta = $vendor_pasta}
-        if (/The most important contributions that the FSF made/ ) {$match = 1;$pasta = $linus_pasta}
-        if (/L\s*(i\W*n\W*u\W*|l\W*u\W*n\W*i\W*|o\W*o\W*n\W*i\W*)x(?!\s+kernel)/ix && ! /(GNU|Gah?n(oo|ew))\s*(.|plus|with|and|slash)\s*(L(oo|i|u)n(oo|i|u)(x|cks))/i) {$match = 1;$pasta = $gnulinux_pasta}
+        # if (/centos/i && ! /two usual ones/) {$match = 1;$pasta = $centos_pasta}
+        # if (/debian/i && ! /separately distributed proprietary programs/) {$match = 1;$pasta = $debian_pasta}
+        # if (/\barch\b/i && ! /two usual problems/) {$match = 1;$pasta = $arch_pasta}
+        # if (/fedora/i && ! /allow that firmware in the/) {$match = 1;$pasta = $fedora_pasta}
+        # if (/mandriva/i && ! /it permits software released/) {$match = 1;$pasta = $mandriva_pasta}
+        # if (/opensuse/i && ! /offers its users access to a repository/) {$match = 1;$pasta = $opensuse_pasta}
+        # if (/red hat|rhel/i && ! /enterprise distribution primarily/) {$match = 1;$pasta = $redhat_pasta}
+        # if (/slackware/i && ! /two usual problems/) {$match = 1;$pasta = $slackware_pasta}
+        # if (/ubuntu/i && ! /provides specific repositories of nonfree/) {$match = 1;$pasta = $ubuntu_pasta}
+        # if (/(free|open|net).?bsd/i && ! /all include instructions for obtaining nonfree/) {$match = 1;$pasta = $bsd_pasta}
+        # if (/bsd.style/i && ! /advertising clause/) {$match = 1;$pasta = $bsdstyle_pasta}
+        # if (/cloud computing|the cloud/i && ! /marketing buzzword/) {$match = 1;$pasta = $cloudcomp_pasta}
+        # if (/closed source/i && ! /lump us in with them/) {$match = 1;$pasta = $closed_pasta}
+        # if (/commercial/i && ! /nonprofit organizations|Canonical expressly promotes|encourages people to imagine/) {$match = 1;$pasta = $commercial_pasta}
+        # if (/consumer/i && ! /Digital Television Promotion/) {$match = 1;$pasta = $consumer_pasta}
+        # if (/content/i && ! /(am|are) content|web site revision system|economic theory|contents/) {$match = 1;$pasta = $content_pasta}
+        # if (/digital goods/i && ! /erroneously identifies/) {$match = 1;$pasta = $digital_goods_pasta}
+        # if (/digital locks?/i && ! /digital handcuffs/) {$match = 1;$pasta = $digital_locks_pasta}
+        # if (/drm|digital rights management/i && ! /lead you unawares|If you want to criticize copyright/) {$match = 1;$pasta = $drm_pasta}
+        # if (/ecosystem/i && ! /implicitly suggests an attitude/) {$match = 1;$pasta = $eco_pasta}
+        # if (/freeware|free.ware/i && ! /often in the 1980s/) {$match = 1;$pasta = $freeware_pasta}
+        # if (/give away software/i && ! /This locution has/) {$match = 1;$pasta = $give_pasta}
+        # if (/hacker/i && ! /playful cleverness--not/) {$match = 1;$pasta = $hacker_pasta}
+        # if (/intellectual property/i && ! /hidden assumption--that|web site revision system/) {$match = 1;$pasta = $ip_pasta}
+        # if (/\blamp\b/i && ! /glamp/i) {$match = 1;$pasta = $lamp_pasta}
+        # if (/software market/i && ! /is a social movement/i) {$match = 1;$pasta = $market_pasta}
+        # if (/monetize/i && ! /a productive and ethical business/) {$match = 1;$pasta = $monetize_pasta}
+        # if (/mp3 player/i && ! /In the late 1990s/) {$match = 1;$pasta = $mp3_pasta}
+        # if (/open (source|sores)/i && ! /Free software is a political movement|lump us in with them/) {$match = 1;$pasta = $open_pasta}
+        # if (/\bpc\b/i && ! /been suggested for a computer running Windows/) {$match = 1;$pasta = $pc_pasta}
+        # if (/pa?edo(phile)?/i && ! /I am skeptical of the claim|sexual interference with a human corpse/) {$match = 1;$pasta = $pedo_pasta}
+        # if (/necro(pa?edo)?phil(e|a)/i && ! /sexual interference with a human corpse|I am skeptical of the claim/i) {$match = 1; $pasta = $necro_pasta}
+        # if (/photoshopped|shooped|shopped/i && ! /one particular image editing program,/) {$match = 1;$pasta = $ps_pasta}
+        # if (/\bpiracy\b|pirate/i && ! /sharing information with your neighbor/) {$match = 1;$pasta = $piracy_pasta}
+        # if (/powerpoint|power point/i && ! /Impress/) {$match = 1;$pasta = $powerpoint_pasta}
+        # if (/(drm|copyright) protection/i && ! /If you want to criticize copyright/) {$match = 1;$pasta = $protection_pasta}
+        # if (/sell(ing)? software/i && ! /imposing proprietary restrictions/) {$match = 1;$pasta = $sellsoft_pasta}
+        # if (/software industry/i && ! /automated production of material goods/) {$match = 1;$pasta = $softwareindustry_pasta}
+        # if (/trusted computing/i && ! /scheme to redesign computers/) {$match = 1;$pasta = $trustedcomp_pasta}
+        # if (/vendor/i && ! /recommend the general term/) {$match = 1;$pasta = $vendor_pasta}
+        # if (/The most important contributions that the FSF made/ ) {$match = 1;$pasta = $linus_pasta}
+        # if (/L\s*(i\W*n\W*u\W*|l\W*u\W*n\W*i\W*|o\W*o\W*n\W*i\W*)x(?!\s+kernel)/ix && ! /(GNU|Gah?n(oo|ew))\s*(.|plus|with|and|slash)\s*(L(oo|i|u)n(oo|i|u)(x|cks))/i) {$match = 1;$pasta = $gnulinux_pasta;}
         if (/fuck (off |your? |the )?(linux|stallman|gnu|gpl|fsf|rms|free software)|(stall(man)?|rms) ?bots?( pls)?|Shut your filthy hippy mouth, Richard/i) {$match = 1;$pasta = $seal_pasta;}
     	} else {
     	if (/What you're referring to as Linux, is in fact, GNU\/Linux/i) {$match = 1;$pasta = $torvalds_pasta}
     	}
 
-            if ($match){
+		if ($match){
             next if grep {$_ == $no} @interjected;
-
             &log_msg("Post Number: $no\nPost: $_\nURL: $thread_url");
             &interject($thread_url, $no, $page);
             push @interjected, $no;
-            $total_posts++;
         }
     }
 }
@@ -510,13 +516,12 @@ sub interject {
 	if ($os eq "Linux") {return if (invoke_curl("http://www.google.com/recaptcha/api/image?c=$challenge -o /tmp/$outfile"));}
     else {return if (invoke_curl("http://www.google.com/recaptcha/api/image?c=$challenge -o $outfile"));}
 	my $vericode;
-
 		if ($os) {
 			print "Enter the CAPTCHA here:";
 			if ($os eq "Darwin") {
 				system "qlmanage -p $outfile &> /dev/null &"; # Haven't tested this myself.
 			} elsif ($os eq "Linux") {
-				system "display /tmp/$outfile &> /dev/null &";
+				system "display -immutable /tmp/$outfile &> /dev/null &";
 			}
 		} else {
 			print "Open $outfile to see the CAPTCHA, then enter it here:";
@@ -532,30 +537,45 @@ sub interject {
 	if ($os eq "Linux") {unlink "/tmp/$outfile";}
     else {unlink $outfile;}
     # Skip post if blank input
-    if ($vericode =~ /^\s*$/){&log_msg("Skipping Post\n");return} 
+    if ($vericode =~ /^\s*$/){&log_msg("Skipping Post\n"); return} 
     my ($url, $post_no, $page, $image_limit) = @_;
     my ($form, $interjection, $submit_button, $pic);
     $interjection = ">>$post_no\n" . $pasta;
     $pic = &select_pic;
 
-    my $mechanize = WWW::Mechanize->new();
-    $mechanize->get($url);
-    if ($image_limit){$mechanize->submit_form( form_number => 1, fields => { com => $interjection, recaptcha_challenge_field => $challenge, recaptcha_response_field => $vericode, pwd => $password},);} 
-    else {$mechanize->submit_form( form_number => 1, fields => { com => $interjection, recaptcha_challenge_field => $challenge, recaptcha_response_field => $vericode, upfile => $pic, pwd => $password},);}
+    $form = HTML::Form->parse($page, $url);
+    #if ($image_limit) {
+    	$form->value('email', $email);
+    	$form->value('com', $interjection);
+    	$form->value('recaptcha_challenge_field', $challenge);
+    	$form->value('recaptcha_response_field', $vericode);
+    	#$form->value('upfile', $pic);
+    	$form->value('pwd', $password);
+    	$submit_button = (grep {$_->type eq 'submit'} $form->inputs)[0];
+    	$ua->proxify_request($submit_button->click($form));
+    #} else {
+    # 	$form->value('email', $email);
+    # 	$form->value('com', $interjection);
+    # 	$form->value('recaptcha_challenge_field', $challenge);
+    # 	$form->value('recaptcha_response_field', $vericode);
+    # 	$submit_button = (grep {$_->type eq 'submit'} $form->inputs)[0];
+    # 	$ua->proxify_request($submit_button->click($form));
+    # }
 
     unlink $pic;
 
-    if ($mechanize->title eq "4chan - Banned"){print "Banned by Freedom-hating mods ;_;\n"; exit}
-    if (grep /successful/i, $mechanize->content()){&log_msg("Interjection to post $post_no successful. Freedom Delivered!\n");} 
-    if (grep /mistyped/i, $mechanize->content()){&log_msg("Mistyped Captcha\n"); &interject($url, $post_no, $page); return} 
-    if (grep /flood/i, $mechanize->content()){&log_msg("Flood Detected\n"); return} 
-    if (grep /duplicate/i, $mechanize->content()){&log_msg("Duplicate Image\n");} 
-    if (grep /thread specified/i, $mechanize->content()){&log_msg("Thread 404'd\n"); return} 
-    if (grep /max limit/i, $mechanize->content()){&log_msg("Image Limit\n"); &interject($url, $post_no, $page, 1); return} 
-    if (grep /too long/i, $mechanize->content()){&log_msg("Pasta too long ;_;\n"); exit} 
-    if (grep /spam/i, $mechanize->content()){&log_msg("Pasta wordfiltered ;_;\n"); exit} 
+    # if ($mechanize->title eq "4chan - Banned"){print "Banned by Freedom-hating mods ;_;\n"; exit}
+    # if (grep /successful/i, $ua->content()){&log_msg("Interjection to post $post_no successful. Freedom Delivered!\n");} 
+    # if (grep /mistyped/i, $mechanize->content()){&log_msg("Mistyped Captcha\n"); &interject($url, $post_no, $page); return} 
+    # if (grep /flood/i, $mechanize->content()){&log_msg("Flood Detected\n"); return} 
+    # if (grep /duplicate/i, $mechanize->content()){&log_msg("Duplicate Image\n");} 
+    # if (grep /thread specified/i, $mechanize->content()){&log_msg("Thread 404'd\n"); return} 
+    # if (grep /max limit/i, $mechanize->content()){&log_msg("Image Limit\n"); &interject($url, $post_no, $page, 1); return} 
+    # if (grep /too long/i, $mechanize->content()){&log_msg("Pasta too long ;_;\n"); exit} 
+    # if (grep /spam/i, $mechanize->content()){&log_msg("Pasta wordfiltered ;_;\n"); exit} 
 
-    sleep($min_post_interval + rand($post_interval_variation)); 
+    sleep($min_post_interval + rand($post_interval_variation));
+    &log_msg()
 }
 
 sub log_msg($) {
