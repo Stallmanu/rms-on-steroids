@@ -28,6 +28,7 @@ datetime
 imagemagick
 
 Todo:
-Circumvent filters(unicode?)
 make @interjected centralized
-Proxify the DNS requests to reverse the polarity of bans
+use proxies from file or URL
+attempt to use a different random proxy when banned
+check whether proxy is banned before attempting to interject

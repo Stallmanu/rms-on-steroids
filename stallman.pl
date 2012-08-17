@@ -69,7 +69,7 @@ my @interjected;
 my $output;
 my $iteration = 0;
 my $ua = LWP::UserAgent->new(agent => @ns_headers);
-my $mech = WWW::Mechanize->new(agent => @ns_headers);
+my $mech = WWW::Mechanize->new();
 
 if ($proxy_enabled) {$ua->proxy([qw/ http https /] => $proxy); $mech->proxy([qw/ http https /] => $proxy);}
 if ($logging_enabled) {open LOGGING, ">", $log_file or die $!; &log_msg("...Logging to $log_file");}
