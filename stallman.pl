@@ -30,6 +30,7 @@ use strict;
 use WWW::Mechanize;
 use LWP::UserAgent;
 use LWP::Protocol::socks;
+use Data::Dumper;
 use DateTime;
 
 my %boards = ( g => 'boards' );                     # Hash containing boards to sweep
@@ -42,10 +43,10 @@ my @ns_headers = (
 
 my $pic_path = "$ENV{HOME}/rms/";
 my $log_file = "$ENV{HOME}/log_interjection";
-my $name = "Richard Matthew Stallman"
+my $name = "Richard Stallman";
 my $email = "sage";
 my $proxy = "socks://localhost:9001";
-my $proxy_enabled = 0;
+my $proxy_enabled = 1;
 my $logging_enabled = 1;
 my $rainbow_rms = 0; 								# Give images random hue
 my $linus_mode = 0;									# Freedom hating Linus mode
@@ -58,11 +59,13 @@ my @handsome_pics = <$pic_path*>;
 my @replacements = (
 	# GNU/Linux pasta replacements
     sub {$_[0] =~ s/I'd just like to interject for one moment/Pardon me for one moment/g;},
-    sub {$_[0] =~ s/is in fact/is in actuality/g;}
+    sub {$_[0] =~ s/is in fact/is in actuality/g;},
+    sub {$_[0] =~ s/I've recently taken to calling/I have nicknamed/g;},
+    sub {$_[0] =~ s/is not an operating system unto itself/isn't an operating system by itself/g;}
 );
 
 my @threads;
-my @interjected;									# Track posts already responded to.
+my @interjected;
 my $output;
 my $iteration = 0;
 my $ua = LWP::UserAgent->new(agent => @ns_headers);
@@ -556,7 +559,7 @@ sub interject {
     if (grep /thread specified/i, $mech->content()){&log_msg("Thread 404'd\n"); return} 
     if (grep /max limit/i, $mech->content()){&log_msg("Image Limit\n"); &interject($url, $post_no, $page, 1); return} 
     if (grep /too long/i, $mech->content()){&log_msg("Pasta too long ;_;\n"); exit} 
-    if (grep /spam/i, $mech->content()){&log_msg("Pasta wordfiltered ;_;\n"); exit} 
+    if (grep /spam/i, $mech->content()){&log_msg("Pasta wordfiltered ;_;\n\n$pasta\n"); exit} 
 
     sleep($min_post_interval + rand($post_interval_variation));
 }
