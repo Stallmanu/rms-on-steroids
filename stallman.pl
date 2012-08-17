@@ -42,12 +42,12 @@ my @ns_headers = (
     'Referer' => 'https://boards.4chan.org/$board/',
 );
 
-my $pic_path = "$ENV{HOME}/rms/";					# Image directory
+my $pic_path = "$ENV{HOME}/rms/";
 my $log_file = "$ENV{HOME}/log_interjection";
-my $email = "sage";										# email field
-my $proxy = "http://localhost:4444";
+my $email = "sage";
+my $proxy = "socks://localhost:9001";
 
-my $proxy_enabled = 0;
+my $proxy_enabled = 1;
 my $logging_enabled = 1;
 my $rainbow_rms = 0; 								# Give images random hue
 my $linus_mode = 0;									# Freedom hating Linus mode
@@ -65,7 +65,7 @@ my $iteration = 0;
 my $ua = LWP::UserAgent->new(agent => @ns_headers);
 my $mech = WWW::Mechanize->new();
 
-if ($proxy_enabled) {$mech->proxy([qw/ http https /] => $proxy);}
+if ($proxy_enabled) {$ua->proxy([qw/ http https /] => $proxy); $mech->proxy([qw/ http https /] => $proxy);}
 if ($logging_enabled) {open LOGGING, ">", $log_file or die $!; &log_msg("...Logging to $log_file");}
 
 # Delicious pasta
@@ -441,15 +441,15 @@ sub scan_posts {
         s/&#44;/,/g;
 
         if (!$linus_mode) {
-        if (/centos/i && ! /two usual ones/) {$match = 1;$pasta = $centos_pasta}
-        if (/debian/i && ! /separately distributed proprietary programs/) {$match = 1;$pasta = $debian_pasta}
-        if (/\barch\b/i && ! /two usual problems/) {$match = 1;$pasta = $arch_pasta}
-        if (/fedora/i && ! /allow that firmware in the/) {$match = 1;$pasta = $fedora_pasta}
-        if (/mandriva/i && ! /it permits software released/) {$match = 1;$pasta = $mandriva_pasta}
-        if (/opensuse/i && ! /offers its users access to a repository/) {$match = 1;$pasta = $opensuse_pasta}
-        if (/red hat|rhel/i && ! /enterprise distribution primarily/) {$match = 1;$pasta = $redhat_pasta}
-        if (/slackware/i && ! /two usual problems/) {$match = 1;$pasta = $slackware_pasta}
-        if (/ubuntu/i && ! /provides specific repositories of nonfree/) {$match = 1;$pasta = $ubuntu_pasta}
+        # if (/centos/i && ! /two usual ones/) {$match = 1;$pasta = $centos_pasta}
+        # if (/debian/i && ! /separately distributed proprietary programs/) {$match = 1;$pasta = $debian_pasta}
+        # if (/\barch\b/i && ! /two usual problems/) {$match = 1;$pasta = $arch_pasta}
+        # if (/fedora/i && ! /allow that firmware in the/) {$match = 1;$pasta = $fedora_pasta}
+        # if (/mandriva/i && ! /it permits software released/) {$match = 1;$pasta = $mandriva_pasta}
+        # if (/opensuse/i && ! /offers its users access to a repository/) {$match = 1;$pasta = $opensuse_pasta}
+        # if (/red hat|rhel/i && ! /enterprise distribution primarily/) {$match = 1;$pasta = $redhat_pasta}
+        # if (/slackware/i && ! /two usual problems/) {$match = 1;$pasta = $slackware_pasta}
+        # if (/ubuntu/i && ! /provides specific repositories of nonfree/) {$match = 1;$pasta = $ubuntu_pasta}
         if (/(free|open|net).?bsd/i && ! /all include instructions for obtaining nonfree/) {$match = 1;$pasta = $bsd_pasta}
         if (/bsd.style/i && ! /advertising clause/) {$match = 1;$pasta = $bsdstyle_pasta}
         if (/cloud computing|the cloud/i && ! /marketing buzzword/) {$match = 1;$pasta = $cloudcomp_pasta}
@@ -482,7 +482,7 @@ sub scan_posts {
         if (/trusted computing/i && ! /scheme to redesign computers/) {$match = 1;$pasta = $trustedcomp_pasta}
         if (/vendor/i && ! /recommend the general term/) {$match = 1;$pasta = $vendor_pasta}
         if (/The most important contributions that the FSF made/ ) {$match = 1;$pasta = $linus_pasta}
-        if (/L\s*(i\W*n\W*u\W*|l\W*u\W*n\W*i\W*|o\W*o\W*n\W*i\W*)x(?!\s+kernel)/ix && ! /(GNU|Gah?n(oo|ew))\s*(.|plus|with|and|slash)\s*(L(oo|i|u)n(oo|i|u)(x|cks))/i) {$match = 1;$pasta = $gnulinux_pasta;}
+        # if (/L\s*(i\W*n\W*u\W*|l\W*u\W*n\W*i\W*|o\W*o\W*n\W*i\W*)x(?!\s+kernel)/ix && ! /(GNU|Gah?n(oo|ew))\s*(.|plus|with|and|slash)\s*(L(oo|i|u)n(oo|i|u)(x|cks))/i) {$match = 1;$pasta = $gnulinux_pasta;}
         if (/fuck (off |your? |the )?(linux|stallman|gnu|gpl|fsf|rms|free software)|(stall(man)?|rms) ?bots?( pls)?|Shut your filthy hippy mouth, Richard/i) {$match = 1;$pasta = $seal_pasta;}
     	} else {
     	if (/What you're referring to as Linux, is in fact, GNU\/Linux/i) {$match = 1;$pasta = $torvalds_pasta}
@@ -533,6 +533,7 @@ sub interject {
     if ($vericode =~ /^\s*$/){&log_msg("Skipping Post\n"); return} 
     my ($url, $post_no, $page, $image_limit) = @_;
     my ($form, $interjection, $submit_button, $pic);
+
     $interjection = ">>$post_no\n" . $pasta;
     $pic = &select_pic;
 
