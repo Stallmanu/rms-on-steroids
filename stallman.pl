@@ -42,12 +42,12 @@ my @ns_headers = (
     'Referer' => 'https://boards.4chan.org/$board/',
 );
 
-my $pic_path = '$ENV{HOME}/rms/';					# Image directory
-my $log_file = "ENV{HOME}/log_interjection";
-my $email = 'sage';										# email field
-my $proxy = 'http://localhost:4444';
+my $pic_path = "$ENV{HOME}/rms/";					# Image directory
+my $log_file = "$ENV{HOME}/log_interjection";
+my $email = "sage";										# email field
+my $proxy = "http://localhost:4444";
 
-my $proxy_enabled = 1;
+my $proxy_enabled = 0;
 my $logging_enabled = 1;
 my $rainbow_rms = 0; 								# Give images random hue
 my $linus_mode = 0;									# Freedom hating Linus mode
@@ -65,14 +65,8 @@ my $iteration = 0;
 my $ua = LWP::UserAgent->new(agent => @ns_headers);
 my $mech = WWW::Mechanize->new();
 
-if ($proxy_enabled) {
-	$mech->proxy([qw/ http https /] => $proxy);
-}
-
-if ($logging_enabled) {
-	open LOGGING, ">", $log_file or die $!;			# Log file location
-	&log_msg("...Logging to $log_file");
-}
+if ($proxy_enabled) {$mech->proxy([qw/ http https /] => $proxy);}
+if ($logging_enabled) {open LOGGING, ">", $log_file or die $!; &log_msg("...Logging to $log_file");}
 
 # Delicious pasta
 our $pasta =<<FIN;
