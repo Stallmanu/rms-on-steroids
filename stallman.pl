@@ -30,8 +30,6 @@ use strict;
 use WWW::Mechanize;
 use LWP::UserAgent;
 use LWP::Protocol::socks;
-use HTML::Form;
-use Data::Dumper;
 use DateTime;
 
 my %boards = ( g => 'boards' );                     # Hash containing boards to sweep
@@ -39,31 +37,36 @@ my @ns_headers = (
     'User-Agent' => 'Mozilla/5.0 (X11; Gentoo; Linux i686; rv:14.0) Gecko/20100101 Firefox/14.0.1',
     'Accept-Charset' => 'iso-8859-1,*,utf-8',
     'Accept-Language' => 'en-US',
-    'Referer' => 'https://boards.4chan.org/$board/',
+    'Referer' => 'https://boards.4chan.org/g/',
 );
 
 my $pic_path = "$ENV{HOME}/rms/";
 my $log_file = "$ENV{HOME}/log_interjection";
+my $name = "Richard Matthew Stallman"
 my $email = "sage";
 my $proxy = "socks://localhost:9001";
-
-my $proxy_enabled = 1;
+my $proxy_enabled = 0;
 my $logging_enabled = 1;
 my $rainbow_rms = 0; 								# Give images random hue
 my $linus_mode = 0;									# Freedom hating Linus mode
 my $scan_interval = 10;								# Interval between each sweep of all boards
 my $min_post_interval = 30;							# Minimum delay after each individual interjection
 my $post_interval_variation = 5;					# Upper threshold of random additional delay after interjecting
-
 my $password = int(rand(99999999));					# Generate random password for stallman
 my @handsome_pics = <$pic_path*>;
+
+my @replacements = (
+	# GNU/Linux pasta replacements
+    sub {$_[0] =~ s/I'd just like to interject for one moment/Pardon me for one moment/g;},
+    sub {$_[0] =~ s/is in fact/is in actuality/g;}
+);
 
 my @threads;
 my @interjected;									# Track posts already responded to.
 my $output;
 my $iteration = 0;
 my $ua = LWP::UserAgent->new(agent => @ns_headers);
-my $mech = WWW::Mechanize->new();
+my $mech = WWW::Mechanize->new(agent => @ns_headers);
 
 if ($proxy_enabled) {$ua->proxy([qw/ http https /] => $proxy); $mech->proxy([qw/ http https /] => $proxy);}
 if ($logging_enabled) {open LOGGING, ">", $log_file or die $!; &log_msg("...Logging to $log_file");}
@@ -425,8 +428,8 @@ sub scan_posts {
     my %posts;
     my $page = ($ua->get($thread_url))->content;
 	# 'name' attribute holds post number, post body is inside blockquote tags.
-    %posts = $page =~
-        /<blockquote class="postMessage" id="m(\d+)">(.*?)<\/blockquote>/gs;
+    %posts = $page =~ /<blockquote class="postMessage" id="m(\d+)">(.*?)<\/blockquote>/gs;
+
     for my $no (sort keys %posts) {
         $_ = $posts{$no}; 
         my $match = 0;
@@ -441,15 +444,15 @@ sub scan_posts {
         s/&#44;/,/g;
 
         if (!$linus_mode) {
-        # if (/centos/i && ! /two usual ones/) {$match = 1;$pasta = $centos_pasta}
-        # if (/debian/i && ! /separately distributed proprietary programs/) {$match = 1;$pasta = $debian_pasta}
-        # if (/\barch\b/i && ! /two usual problems/) {$match = 1;$pasta = $arch_pasta}
-        # if (/fedora/i && ! /allow that firmware in the/) {$match = 1;$pasta = $fedora_pasta}
-        # if (/mandriva/i && ! /it permits software released/) {$match = 1;$pasta = $mandriva_pasta}
-        # if (/opensuse/i && ! /offers its users access to a repository/) {$match = 1;$pasta = $opensuse_pasta}
-        # if (/red hat|rhel/i && ! /enterprise distribution primarily/) {$match = 1;$pasta = $redhat_pasta}
-        # if (/slackware/i && ! /two usual problems/) {$match = 1;$pasta = $slackware_pasta}
-        # if (/ubuntu/i && ! /provides specific repositories of nonfree/) {$match = 1;$pasta = $ubuntu_pasta}
+        if (/centos/i && ! /two usual ones/) {$match = 1;$pasta = $centos_pasta}
+        if (/debian/i && ! /separately distributed proprietary programs/) {$match = 1;$pasta = $debian_pasta}
+        if (/\barch\b/i && ! /two usual problems/) {$match = 1;$pasta = $arch_pasta}
+        if (/fedora/i && ! /allow that firmware in the/) {$match = 1;$pasta = $fedora_pasta}
+        if (/mandriva/i && ! /it permits software released/) {$match = 1;$pasta = $mandriva_pasta}
+        if (/opensuse/i && ! /offers its users access to a repository/) {$match = 1;$pasta = $opensuse_pasta}
+        if (/red hat|rhel/i && ! /enterprise distribution primarily/) {$match = 1;$pasta = $redhat_pasta}
+        if (/slackware/i && ! /two usual problems/) {$match = 1;$pasta = $slackware_pasta}
+        if (/ubuntu/i && ! /provides specific repositories of nonfree/) {$match = 1;$pasta = $ubuntu_pasta}
         if (/(free|open|net).?bsd/i && ! /all include instructions for obtaining nonfree/) {$match = 1;$pasta = $bsd_pasta}
         if (/bsd.style/i && ! /advertising clause/) {$match = 1;$pasta = $bsdstyle_pasta}
         if (/cloud computing|the cloud/i && ! /marketing buzzword/) {$match = 1;$pasta = $cloudcomp_pasta}
@@ -481,8 +484,8 @@ sub scan_posts {
         if (/software industry/i && ! /automated production of material goods/) {$match = 1;$pasta = $softwareindustry_pasta}
         if (/trusted computing/i && ! /scheme to redesign computers/) {$match = 1;$pasta = $trustedcomp_pasta}
         if (/vendor/i && ! /recommend the general term/) {$match = 1;$pasta = $vendor_pasta}
-        if (/The most important contributions that the FSF made/ ) {$match = 1;$pasta = $linus_pasta}
-        # if (/L\s*(i\W*n\W*u\W*|l\W*u\W*n\W*i\W*|o\W*o\W*n\W*i\W*)x(?!\s+kernel)/ix && ! /(GNU|Gah?n(oo|ew))\s*(.|plus|with|and|slash)\s*(L(oo|i|u)n(oo|i|u)(x|cks))/i) {$match = 1;$pasta = $gnulinux_pasta;}
+        if (/The most important contributions that the FSF made/i ) {$match = 1;$pasta = $linus_pasta}
+        if (/L\s*(i\W*n\W*u\W*|l\W*u\W*n\W*i\W*|o\W*o\W*n\W*i\W*)x(?!\s+kernel)/ix && ! /(GNU|Gah?n(oo|ew))\s*(.|plus|with|and|slash)\s*(L(oo|i|u)n(oo|i|u)(x|cks))/i) {$match = 1;$pasta = $gnulinux_pasta;}
         if (/fuck (off |your? |the )?(linux|stallman|gnu|gpl|fsf|rms|free software)|(stall(man)?|rms) ?bots?( pls)?|Shut your filthy hippy mouth, Richard/i) {$match = 1;$pasta = $seal_pasta;}
     	} else {
     	if (/What you're referring to as Linux, is in fact, GNU\/Linux/i) {$match = 1;$pasta = $torvalds_pasta}
@@ -534,12 +537,14 @@ sub interject {
     my ($url, $post_no, $page, $image_limit) = @_;
     my ($form, $interjection, $submit_button, $pic);
 
+	foreach my $replace (@replacements) { &{$replace}($pasta); }
+
     $interjection = ">>$post_no\n" . $pasta;
     $pic = &select_pic;
 
     $mech->get($url);
-    if ($image_limit){$mech->submit_form( form_number => 1, fields => { com => $interjection, recaptcha_challenge_field => $challenge, recaptcha_response_field => $vericode, email => $email, pwd => $password},);}
-    else {$mech->submit_form( form_number => 1, fields => { com => $interjection, recaptcha_challenge_field => $challenge, recaptcha_response_field => $vericode, email => $email, upfile => $pic, pwd => $password},);}
+    if ($image_limit){$mech->submit_form( form_number => 1, fields => { com => $interjection, recaptcha_challenge_field => $challenge, recaptcha_response_field => $vericode, name => $name, email => $email, pwd => $password},);}
+    else {$mech->submit_form( form_number => 1, fields => { com => $interjection, recaptcha_challenge_field => $challenge, recaptcha_response_field => $vericode, name => $name, email => $email, upfile => $pic, pwd => $password},);}
 
     unlink $pic;
 
