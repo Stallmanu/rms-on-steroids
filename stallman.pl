@@ -48,6 +48,7 @@ my $email = "";
 my $proxy = "socks://localhost:9001";
 my $proxy_enabled = 0;
 my $logging_enabled = 1;
+my $image50 = 0;                                    # 50% chance of no image posted
 my $rainbow_rms = 1; 								# Give images random hue
 my $linus_mode = 0;									# Freedom hating Linus mode
 my $scan_interval = 10;								# Interval between each sweep of all boards
@@ -59,43 +60,66 @@ my @handsome_pics = <$pic_path*>;
 my @replacements = (
 	# GNU/Linux pasta replacements
     sub {$_[0] =~ s/\bI'd\b/I would/g;},
+    sub {$_[0] =~ s/^I would\b/Excuse me, but I would/g;},
     sub {$_[0] =~ s/\bI'd\b/Pardon, but I'd/g;},
+    sub {$_[0] =~ s/\bPardon, but I'd like to\b/Can I/g;},
     sub {$_[0] =~ s/\bI'd like to\b/If I may/g;},
+    sub {$_[0] =~ s/\bIf I may\b/Let me/g;},
     sub {$_[0] =~ s/\bjust\b/simply/g;},
+    sub {$_[0] =~ s/\bsimply a\b/a/g;},
     sub {$_[0] =~ s/\bjust a\b/but a/g;},
+    sub {$_[0] =~ s/\bbut a\b/one/g;},
     sub {$_[0] =~ s/\bbutt in\b/cut in/g;},
     sub {$_[0] =~ s/\bbutt in\b/hold you up/g;},
+    sub {$_[0] =~ s/\bhold you up\b/barge in/g;},
     sub {$_[0] =~ s/\bbutt in\b/cut you off there/g;},
+    sub {$_[0] =~ s/\bcut you off there\b/disturb you/g;},
     sub {$_[0] =~ s/\bbutt in\b/take your time/g;},
     sub {$_[0] =~ s/\bcut in\b/interrupt/g;},
     sub {$_[0] =~ s/\bmoment\b/bit/g;},
     sub {$_[0] =~ s/\bmoment\b/short while/g;},
+    sub {$_[0] =~ s/\bshort while\b/wink/g;},
     sub {$_[0] =~ s/\bbit\b/second/g;},
     sub {$_[0] =~ s/\breferring\b/alluding/g;},
+    sub {$_[0] =~ s/\balluding to as\b/saying is/g;},
     sub {$_[0] =~ s/\breferring to as\b/calling/g;},
+    sub {$_[0] =~ s/\bcalling\b/naming/g;},
     sub {$_[0] =~ s/\breferring to as\b/proclaiming to be/g;},
     sub {$_[0] =~ s/\bis in fact\b/is in actuality/g;},
+    sub {$_[0] =~ s/\bis in actuality\b/isnt that but rather/g;},
     sub {$_[0] =~ s/\bis in fact\b/is really/g;},
     sub {$_[0] =~ s/\bI've\b/I have/g;},
     sub {$_[0] =~ s/\bI've recently taken to calling\b/I just the other day began to call/g;},
     sub {$_[0] =~ s/\brecently\b/of late/g;},
     sub {$_[0] =~ s/\brecently\b/lately/g;},
-    sub {$_[0] =~ s/\brecently taken to \b/not long ago started/g;},
+    sub {$_[0] =~ s/\blately\b/newly/g;},
+    sub {$_[0] =~ s/\brecently taken to \b/not long ago started /g;},
     sub {$_[0] =~ s/\bplus\b/+/g;},
     sub {$_[0] =~ s/\bplus\b/with/g;},
+    sub {$_[0] =~ s/\bwith\b/and/g;},
     sub {$_[0] =~ s/\bis not\b/isn't/g;},
     sub {$_[0] =~ s/\boperating system\b/OS/g;},
+    sub {$_[0] =~ s/\bOS\b/operating system/g;},
     sub {$_[0] =~ s/\bunto itself\b/on its own/g;},
     sub {$_[0] =~ s/\bunto\b/by/g;},
     sub {$_[0] =~ s/\brather\b/actually/g;},
+    sub {$_[0] =~ s/\bactually\b/in reality/g;},
     sub {$_[0] =~ s/\brather\b/really/g;},
+    sub {$_[0] =~ s/\brather\b/truly/g;},
     sub {$_[0] =~ s/\bcomponent\b/piece/g;},
     sub {$_[0] =~ s/\bcomponent\b/part/g;},
+    sub {$_[0] =~ s/\bcomponent\b/portion/g;},
     sub {$_[0] =~ s/\bfully\b/completely/g;},
+    sub {$_[0] =~ s/\bfully\b/entirely/g;},
     sub {$_[0] =~ s/\bfunctioning\b/working/g;},
     sub {$_[0] =~ s/\bfunctioning\b/operational/g;},
+    sub {$_[0] =~ s/\bfunctioning\b/running/g;},
+    sub {$_[0] =~ s/\bfunctioning\b/running/g;},
     sub {$_[0] =~ s/\bsystem\b/setup/g;},
+    sub {$_[0] =~ s/\bsystem\b/structure/g;},
     sub {$_[0] =~ s/\bmade useful\b/fashioned into something useful/g;},
+    sub {$_[0] =~ s/\bmade useful\b/turned useful/g;},
+    sub {$_[0] =~ s/\bmade useful\b/made viable/g;},
     sub {$_[0] =~ s/\buseful\b/proper/g;},
     sub {$_[0] =~ s/\buseful\b/practical/g;},
     sub {$_[0] =~ s/\buseful\b/of service/g;},
@@ -104,9 +128,10 @@ my @replacements = (
     sub {$_[0] =~ s/\bcorelibs\b/libs/g;},
     sub {$_[0] =~ s/\bcorelibs\b/central libs/g;},
     sub {$_[0] =~ s/\bshell\b/terminal/g;},
+    sub {$_[0] =~ s/\bshell\b/term/g;},
     sub {$_[0] =~ s/\butilities\b/tools/g;},
     sub {$_[0] =~ s/\butilities\b/facilities/g;},
-    sub {$_[0] =~ s/\butilities\b/facilities/g;},
+    sub {$_[0] =~ s/\butilities\b/utensils/g;},
     sub {$_[0] =~ s/\bvital\b/essential/g;},
     sub {$_[0] =~ s/\bvital\b/necessary/g;},
     sub {$_[0] =~ s/\bvital\b/required/g;},
@@ -148,6 +173,7 @@ my @replacements = (
     sub {$_[0] =~ s/\bturn of events\b/happenstance/g;},
     sub {$_[0] =~ s/\bturn of events\b/series of situations/g;},
     sub {$_[0] =~ s/\bturn of events\b/series of events/g;},
+    sub {$_[0] =~ s/\bof GNU(?!\swhich)\b/from GNU/g;},
     sub {$_[0] =~ s/\bGNU which is\b/GNU that is/g;},
     sub {$_[0] =~ s/\bGNU that is\b/GNU that is being/g;},
     sub {$_[0] =~ s/\bwidely\b/broadly/g;},
@@ -178,6 +204,9 @@ my @replacements = (
     sub {$_[0] =~ s/\bby the GNU Project\b/by GNU/g;},
     sub {$_[0] =~ s/\bby the GNU Project\b/by the FSF/g;},
     sub {$_[0] =~ s/\bby the GNU Project\b/by GNU developers/g;},
+    sub {$_[0] =~ s/\bthe whole\b/the entire/g;},
+    sub {$_[0] =~ s/\bthe whole\b/the complete/g;},
+    sub {$_[0] =~ s/\bthe whole\b/the full/g;},
     sub {$_[0] =~ s/\bwith Linux added\b/with the addition of Linux/g;},
     sub {$_[0] =~ s/\bwith Linux added\b/with Linux added on/g;},
     sub {$_[0] =~ s/\bare using it\b/do have it installed/g;},
@@ -186,10 +215,35 @@ my @replacements = (
     sub {$_[0] =~ s/\bjust a part\b/simply a portion/g;},
     sub {$_[0] =~ s/\bjust a part\b/but a portion/g;},
     sub {$_[0] =~ s/\bjust a part\b/but a part/g;},
+    sub {$_[0] =~ s/\bjust a part\b/only one piece/g;},
+    sub {$_[0] =~ s/\bthey use\b//g;},
+    sub {$_[0] =~ s/\bthey use\b/which is run/g;},
+    sub {$_[0] =~ s/\bthey use\b/that is being used/g;},
+    sub {$_[0] =~ s/\bthey use\b/they are using/g;},
+    sub {$_[0] =~ s/\bthey use\b/they run/g;},
     sub {$_[0] =~ s/\bkernel\b/core/g;},
+    sub {$_[0] =~ s/\bkernel\b/base/g;},
+    sub {$_[0] =~ s/\bkernel\b/foundation/g;},
+    sub {$_[0] =~ s/\bkernel\b/heart/g;},
     sub {$_[0] =~ s/\bprogram in the\b/part of the/g;},
+    sub {$_[0] =~ s/\bprogram in the\b/service in the/g;},
+    sub {$_[0] =~ s/\bprogram in the\b/process in the/g;},
+    sub {$_[0] =~ s/\bprogram in the\b/piece of the/g;},
     sub {$_[0] =~ s/\ballocates\b/distributes/g;},
     sub {$_[0] =~ s/\ballocates\b/gives out/g;},
+    sub {$_[0] =~ s/\ballocates\b/sends/g;},
+    sub {$_[0] =~ s/\bresources\b/supply of resources/g;},
+    sub {$_[0] =~ s/\bresources\b/assets/g;},
+    sub {$_[0] =~ s/\bresources\b/services/g;},
+    sub {$_[0] =~ s/\bresources\b/utilities/g;},
+    sub {$_[0] =~ s/\bother programs that you run\b/other parts of the system/g;},
+    sub {$_[0] =~ s/\bother programs that you run\b/different sections of the machine/g;},
+    sub {$_[0] =~ s/\bother programs\b/seperate programs/g;},
+    sub {$_[0] =~ s/\bseperate progams\b/seperate processes/g;},
+    sub {$_[0] =~ s/\bother programs\b/other services/g;},
+    sub {$_[0] =~ s/\bthat you run\b/which are running/g;},
+    sub {$_[0] =~ s/\bthat you run\b/that you start/g;},
+    sub {$_[0] =~ s/\bthat you run\b/that the system needs/g;},
     sub {$_[0] =~ s/\bis an essential part\b/is a necessary part/g;},
     sub {$_[0] =~ s/\bbut useless by itself\b/but cannot work on its own/g;},
     sub {$_[0] =~ s/\bbut useless by itself\b/but relies on the rest of the system to work/g;},
@@ -215,9 +269,36 @@ my @replacements = (
     sub {$_[0] =~ s/\bso-called\b/alleged/g;},
     sub {$_[0] =~ s/\bso-called\b/supposed/g;},
     sub {$_[0] =~ s/\bdistributions\b/distros/g;},
+    sub {$_[0] =~ s/\bdistributions\b/devs/g;},
+    sub {$_[0] =~ s/\bdistributions\b/developers/g;},
     sub {$_[0] =~ s/\bdistributions\b/releases/g;},
+    sub {$_[0] =~ s/\bare really\b/are/g;},
+    sub {$_[0] =~ s/\bare really\b/really are/g;},
+    sub {$_[0] =~ s/\bare really\b/actually are/g;},
+    sub {$_[0] =~ s/\bare really\b/are in fact,/g;},
+    sub {$_[0] =~ s/:/,/g;},
+    sub {$_[0] =~ s/:/;/g;},
+    sub {$_[0] =~ s/\//+/g;},
+    sub {$_[0] =~ s/\// + /g;},
+    sub {$_[0] =~ s/\// plus /g;},
+    sub {$_[0] =~ s/\// with /g;},
     sub {$_[0] =~ s/\bjust\b/simply/g;}
 );
+
+my @major_replacements = ( 
+    sub {$_[0] =~ s/I'd like to butt in for just a moment.//g;},
+    sub {$_[0] =~ s/What you're referring to as Linux, is in fact, GNU\/Linux, or as I've recently taken to calling it, GNU plus Linux.//g;},
+    sub {$_[0] =~ s/Linux is not an operating system unto itself, but rather another free component of a fully functioning GNU system made useful by the GNU corelibs, shell utilities and vital system components comprising a full OS.//g;},
+    sub {$_[0] =~ s/Many computer users run a modified version of the GNU system every day, without realizing it.//g;},
+    sub {$_[0] =~ s/Through a peculiar turn of events, the version of GNU which is widely used today is often called "Linux", and many of its users are not aware that it is basically the GNU system, developed by the GNU Project.//g;},
+    sub {$_[0] =~ s/There really is a Linux, and these people are using it, but it is just a part of the system they use.//g;},
+    sub {$_[0] =~ s/Linux is the kernel: the program in the system that allocates the machine's resources to the other programs that you run.//g;},
+    sub {$_[0] =~ s/The kernel is an essential part of an operating system, but useless by itself; it can only function in the context of a complete operating system.//g;},
+    sub {$_[0] =~ s/Linux is normally used in combination with the GNU operating system: the whole system is basically GNU with Linux added, or GNU\/Linux.//g;},
+    sub {$_[0] =~ s/All the so-called "Linux" distributions are really distributions of GNU\/Linux.//g;},
+);
+
+
 
 my @threads;
 my @interjected;
@@ -231,7 +312,7 @@ if ($logging_enabled) {open LOGGING, ">", $log_file or die $!; &log_msg("...Logg
 
 # Delicious pasta
 our $pasta =<<FIN;
-I'd like to butt in for just a moment. What you're referring to as Linux, is in fact, GNU/Linux, or as I've recently taken to calling it, GNU plus Linux. Linux is not an operating system unto itself, but rather another free component of a fully functioning GNU system made useful by the GNU corelibs, shell utilities and vital system components comprising a full OS as defined by POSIX.
+I'd like to butt in for just a moment. What you're referring to as Linux, is in fact, GNU/Linux, or as I've recently taken to calling it, GNU plus Linux. Linux is not an operating system unto itself, but rather another free component of a fully functioning GNU system made useful by the GNU corelibs, shell utilities and vital system components comprising a full OS.
 
 Many computer users run a modified version of the GNU system every day, without realizing it. Through a peculiar turn of events, the version of GNU which is widely used today is often called "Linux", and many of its users are not aware that it is basically the GNU system, developed by the GNU Project.
 
@@ -239,7 +320,7 @@ There really is a Linux, and these people are using it, but it is just a part of
 FIN
 
 our $gnulinux_pasta =<<FIN;
-I'd like to butt in for just a moment. What you're referring to as Linux, is in fact, GNU/Linux, or as I've recently taken to calling it, GNU plus Linux. Linux is not an operating system unto itself, but rather another free component of a fully functioning GNU system made useful by the GNU corelibs, shell utilities and vital system components comprising a full OS as defined by POSIX.
+I'd like to butt in for just a moment. What you're referring to as Linux, is in fact, GNU/Linux, or as I've recently taken to calling it, GNU plus Linux. Linux is not an operating system unto itself, but rather another free component of a fully functioning GNU system made useful by the GNU corelibs, shell utilities and vital system components comprising a full OS.
 
 Many computer users run a modified version of the GNU system every day, without realizing it. Through a peculiar turn of events, the version of GNU which is widely used today is often called "Linux", and many of its users are not aware that it is basically the GNU system, developed by the GNU Project.
 
@@ -643,7 +724,7 @@ sub scan_posts {
         #if (/trusted computing/i && ! /scheme to redesign computers/) {$match = 1;$pasta = $trustedcomp_pasta}
         #if (/vendor/i && ! /recommend the general term/) {$match = 1;$pasta = $vendor_pasta}
         #if (/The most important contributions that the FSF made/i ) {$match = 1;$pasta = $linus_pasta}
-        if (/L\s*(i\W*n\W*u\W*|l\W*u\W*n\W*i\W*|o\W*o\W*n\W*i\W*)x(?!\s*kernel)/ix && ! /(GNU|Gah?n(oo|ew))\s*(.|plus|with|and|slash)\s*(L(oo|i|u)n(oo|i|u)(x|cks))/i) {$match = 1;$pasta = $gnulinux_pasta;}
+        if (/L\s*(i\W*n\W*u\W*|u\W*n\W*i\W*|o\W*o\W*n\W*i\W*)x(?!\s*kernel)/ix && ! /(GNU|Gah?n(oo|ew))\s*(.|plus|with|and|slash)\s*(L(oo|i|u)n(oo|i|u)(x|cks))/i && ! /^(linux.?)+$/i) {$match = 1;$pasta = $gnulinux_pasta;}
         #if (/fuck (off |your? |the )?(linux|stallman|gnu|gpl|fsf|rms|free software)|(stall(man)?|rms) ?bots?( pls)?|Shut your filthy hippy mouth, Richard/i) {$match = 1;$pasta = $seal_pasta;}
     	#} else {
     	#if (/What you're referring to as Linux, is in fact, GNU\/Linux/i) {$match = 1;$pasta = $torvalds_pasta}
@@ -695,11 +776,25 @@ sub interject {
     my ($url, $post_no, $page, $image_limit) = @_;
     my ($form, $interjection, $submit_button, $pic);
 
+
+    if ($image50){
+        if (int(rand(2)) eq 0) {
+        $image_limit = 1;}
+}
+
+	foreach my $replace (@major_replacements) { 
+        if (int(rand(3)) eq 0) {
+        &{$replace}($pasta); 
+    }
+}
 	foreach my $replace (@replacements) { 
         if (int(rand(2)) eq 0) {
         &{$replace}($pasta); 
     }
 }
+
+    #fix spacing caused by major_replacements
+    $pasta =~ s/\n\n\n+/\n\n/g;
 
     $interjection = ">>$post_no\n" . $pasta;
     $pic = &select_pic;
