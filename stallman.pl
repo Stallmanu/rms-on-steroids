@@ -95,6 +95,7 @@ my @replacements = (
     sub {$_[0] =~ s/\blately\b/newly/g;},
     sub {$_[0] =~ s/\brecently taken to \b/not long ago started /g;},
     sub {$_[0] =~ s/\bplus\b/+/g;},
+    sub {$_[0] =~ s/\b\+\b/\//g;},
     sub {$_[0] =~ s/\bplus\b/with/g;},
     sub {$_[0] =~ s/\bwith\b/and/g;},
     sub {$_[0] =~ s/\bis not\b/isn't/g;},
@@ -137,6 +138,9 @@ my @replacements = (
     sub {$_[0] =~ s/\bvital\b/required/g;},
     sub {$_[0] =~ s/\bcomprising\b/completing/g;},
     sub {$_[0] =~ s/\bcomprising\b/fulfilling/g;},
+    sub {$_[0] =~ s/\ba full\b/an entire/g;},
+    sub {$_[0] =~ s/\ba full\b/a complete/g;},
+    sub {$_[0] =~ s/\ba full\b/a whole/g;},
     sub {$_[0] =~ s/\bMany computer\b/Quite a few computer/g;},
     sub {$_[0] =~ s/\bMany computer\b/A sizeable amount of computer/g;},
     sub {$_[0] =~ s/\bMany computer\b/There are many/g;},
@@ -151,7 +155,7 @@ my @replacements = (
     sub {$_[0] =~ s/\bmodified\b/changed/g;},
     sub {$_[0] =~ s/\bmodified\b/tweaked/g;},
     sub {$_[0] =~ s/\bof the GNU\b/of the original/g;},
-    sub {$_[0] =~ s/\bof the GNU system\b/of the original/g;},
+    sub {$_[0] =~ s/\bof the (GNU)? system\b/of the original/g;},
     sub {$_[0] =~ s/\bevery day\b/everyday/g;},
     sub {$_[0] =~ s/\bevery day\b/daily/g;},
     sub {$_[0] =~ s/\bevery day\b/every single day/g;},
@@ -279,7 +283,6 @@ my @replacements = (
     sub {$_[0] =~ s/:/,/g;},
     sub {$_[0] =~ s/:/;/g;},
     sub {$_[0] =~ s/\//+/g;},
-    sub {$_[0] =~ s/\// + /g;},
     sub {$_[0] =~ s/\// plus /g;},
     sub {$_[0] =~ s/\// with /g;},
     sub {$_[0] =~ s/\bjust\b/simply/g;}
@@ -296,6 +299,21 @@ my @major_replacements = (
     sub {$_[0] =~ s/The kernel is an essential part of an operating system, but useless by itself; it can only function in the context of a complete operating system.//g;},
     sub {$_[0] =~ s/Linux is normally used in combination with the GNU operating system: the whole system is basically GNU with Linux added, or GNU\/Linux.//g;},
     sub {$_[0] =~ s/All the so-called "Linux" distributions are really distributions of GNU\/Linux.//g;},
+    sub {$_[0] =~ s/functioning GNU/functioning/g;},
+    sub {$_[0] =~ s/GNU corelibs/corelibs/g;},
+    sub {$_[0] =~ s/version of the GNU/version of the/g;},
+    sub {$_[0] =~ s/the version of GNU/the version/g;},
+    sub {$_[0] =~ s/, developed by the GNU Project//g;},
+    sub {$_[0] =~ s/the GNU system, developed by//g;},
+    sub {$_[0] =~ s/GNU operating/operating/g;},
+    sub {$_[0] =~ s/basically GNU/basically an OS/g;},
+    sub {$_[0] =~ s/GNU/Gahnoo/;},
+    sub {$_[0] =~ s/GNU/Guhnoo/;},
+    sub {$_[0] =~ s/GNU/Gahnew/;},
+    sub {$_[0] =~ s/GNU/Gahnoo/;},
+    sub {$_[0] =~ s/GNU/Guhnew/;},
+    sub {$_[0] =~ s/GNU/Guhnoo/;},
+    sub {$_[0] =~ s/GNU/Gahnoo/;}
 );
 
 
@@ -724,7 +742,7 @@ sub scan_posts {
         #if (/trusted computing/i && ! /scheme to redesign computers/) {$match = 1;$pasta = $trustedcomp_pasta}
         #if (/vendor/i && ! /recommend the general term/) {$match = 1;$pasta = $vendor_pasta}
         #if (/The most important contributions that the FSF made/i ) {$match = 1;$pasta = $linus_pasta}
-        if (/L\s*(i\W*n\W*u\W*|u\W*n\W*i\W*|o\W*o\W*n\W*i\W*)x(?!\s*kernel)/ix && ! /(GNU|Gah?n(oo|ew))\s*(.|plus|with|and|slash)\s*(L(oo|i|u)n(oo|i|u)(x|cks))/i && ! /^(linux.?)+$/i) {$match = 1;$pasta = $gnulinux_pasta;}
+        if (/L\s*(i\W*n\W*u\W*|u\W*n\W*i\W*|o\W*o\W*n\W*i\W*)x(?!\s*kernel)/ix && ! /(GNU|G(a|u)h?n(oo|ew))\s*(.|plus|with|and|slash)\s*(L(oo|i|u)n(oo|i|u)(x|cks))/i && ! /^(linux.?)+$/i) {$match = 1;$pasta = $gnulinux_pasta;}
         #if (/fuck (off |your? |the )?(linux|stallman|gnu|gpl|fsf|rms|free software)|(stall(man)?|rms) ?bots?( pls)?|Shut your filthy hippy mouth, Richard/i) {$match = 1;$pasta = $seal_pasta;}
     	#} else {
     	#if (/What you're referring to as Linux, is in fact, GNU\/Linux/i) {$match = 1;$pasta = $torvalds_pasta}
@@ -833,3 +851,4 @@ sub select_pic {
     else {system 'convert "' . @handsome_pics[int(rand(@handsome_pics))] . '" -resize ' . int(rand(20)+ 80) . '% ' . $filename;}
     return $filename;
 }
+
